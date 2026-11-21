@@ -1,0 +1,61 @@
+# Apple M2 Pro | macOS-27.2.1-arm64-arm-64bit | python 3.12.16 | py_arkworks_bls12381 0.5.0
+operation,scheme,n_or_N,median_ms
+setup per member,vASM (Fischlin PoK),4,85.824
+setup per member,vASM (Fiat-Shamir PoK),4,17.098
+setup per member,"vASM (no PoK, insecure)",4,3.712
+setup per member,BDN ASM / ASMwSA,4,2.524
+check key proofs,ASMwSA/ASMwCA (Fischlin),4,9.924
+sign share,vASM,4,0.322
+verify (l=n/2),vASM,4,1.281
+sign share,BDN ASM,4,0.314
+verify (l=n/2),BDN ASM,4,1.945
+verify (l=n/2),ASMwSA (spk given),4,1.715
+setup per member,vASM (Fischlin PoK),16,538.276
+setup per member,vASM (Fiat-Shamir PoK),16,212.888
+setup per member,"vASM (no PoK, insecure)",16,18.998
+setup per member,BDN ASM / ASMwSA,16,9.396
+check key proofs,ASMwSA/ASMwCA (Fischlin),16,39.769
+sign share,vASM,16,0.315
+verify (l=n/2),vASM,16,1.381
+sign share,BDN ASM,16,0.340
+verify (l=n/2),BDN ASM,16,3.219
+verify (l=n/2),ASMwSA (spk given),16,3.014
+setup per member,vASM (Fischlin PoK),64,5410.915
+setup per member,vASM (Fiat-Shamir PoK),64,3527.066
+setup per member,"vASM (no PoK, insecure)",64,358.868
+setup per member,BDN ASM / ASMwSA,64,59.920
+check key proofs,ASMwSA/ASMwCA (Fischlin),64,167.022
+sign share,vASM,64,0.339
+verify (l=n/2),vASM,64,1.404
+sign share,BDN ASM,64,0.311
+verify (l=n/2),BDN ASM,64,8.113
+verify (l=n/2),ASMwSA (spk given),64,7.850
+setup per member,vASM (Fischlin PoK),256,64525.435
+setup per member,vASM (Fiat-Shamir PoK),256,54808.050
+setup per member,"vASM (no PoK, insecure)",256,5013.404
+setup per member,BDN ASM / ASMwSA,256,643.071
+check key proofs,ASMwSA/ASMwCA (Fischlin),256,671.201
+sign share,BDN ASM,256,0.305
+verify (l=n/2),BDN ASM,256,26.763
+verify (l=n/2),ASMwSA (spk given),256,26.616
+aggregate verify,AvASM,1,1.336
+aggregate verify,AvASM,10,5.735
+aggregate verify,AvASM,100,48.976
+sign share,vASM,256,0.467
+verify (l=n/2),vASM,256,1.645
+setup per member,ASM (BDN) incl. mk,4,2.554
+setup per member,ASMwSA/ASMwCA incl. key-proof check,4,12.522
+setup per member,ASM (BDN) incl. mk,16,9.373
+setup per member,ASMwSA/ASMwCA incl. key-proof check,16,49.154
+setup per member,ASM (BDN) incl. mk,64,58.729
+setup per member,ASMwSA/ASMwCA incl. key-proof check,64,222.391
+setup per member,ASM (BDN) incl. mk,256,611.563
+setup per member,ASMwSA/ASMwCA incl. key-proof check,256,1265.290
+sign share,ASMwSA,4,0.330
+sign share,ASMwCA,4,0.320
+sign share,ASMwSA,16,0.338
+sign share,ASMwCA,16,0.325
+sign share,ASMwSA,64,0.339
+sign share,ASMwCA,64,0.316
+sign share,ASMwSA,256,0.406
+sign share,ASMwCA,256,0.316
