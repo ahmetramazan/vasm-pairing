@@ -32,3 +32,7 @@ The private key stays on your machine; use an account that holds only test ETH.
 `NS` selects the group sizes (registering n = 256 costs a lot of gas). The script prints the
 contract address and writes `results_gas_sepolia.csv` with one transaction hash per
 measurement, which can be looked up on sepolia.etherscan.io.
+
+The results in `results_gas_sepolia.csv` (n = 4, 16) come from the contract at
+`0x1Fb5826EbF075CE2502BfA9a71cC92fB88989116` on Sepolia (22 November 2026). Every
+measurement used exactly 6000 gas less than on the local chain.

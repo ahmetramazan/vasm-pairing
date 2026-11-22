@@ -37,7 +37,15 @@ async function main() {
   if (h.toLowerCase() !== V.rfc9380.point.toLowerCase()) throw new Error("hash-to-G2 does not match RFC 9380");
   console.log("hash-to-G2 matches the RFC 9380 test vector");
 
-  const send = async (fn, ...args) => (await (await C[fn](...args)).wait());
+  // Public RPC endpoints are load balanced: a node may not yet see the previous transaction
+  // when the next one is estimated, so retry a few times (resetting the nonce manager).
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const send = async (fn, ...args) => {
+    for (let t = 0; ; t++) {
+      try { return await (await C[fn](...args)).wait(); }
+      catch (e) { if (name === "local" || t >= 6 || e.action !== "estimateGas") throw e; wallet.reset(); await sleep(5000); }
+    }
+  };
   const rows = [["network", "scheme", "n", "l", "gas_used", "tx"]];
   const seed = BigInt(Date.now());           // fresh group ids for every run
   let gid = seed * 1000n;
