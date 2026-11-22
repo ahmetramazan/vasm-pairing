@@ -1,0 +1,79 @@
+# macOS-27.2.1-arm64-arm-64bit | arm | python 3.12.16
+operation,scheme,n_or_N,median_ms,min_ms,max_ms,runs
+setup per member,ASM (BDN) incl. mk,4,2.470,2.460,2.484,5
+setup per member,ASMwSA/ASMwCA incl. key-proof check,4,4.682,4.670,4.809,5
+setup per member,vASM,4,13.360,13.323,14.518,5
+sign share,ASM (BDN),4,0.301,0.297,0.313,21
+sign share,ASMwSA,4,0.309,0.305,0.338,21
+sign share,ASMwCA,4,0.304,0.304,0.325,21
+sign share,vASM,4,0.307,0.292,0.335,21
+verify (l=n/2),vASM,4,1.274,1.249,1.323,21
+verify (l=n/2),BDN ASM (H2 hashed each time),4,1.921,1.893,2.023,21
+verify (l=n/2),BDN ASM (H2 stored per group),4,1.500,1.489,1.593,21
+verify (l=n/2),ASMwSA / ASMwCA (H2 hashed each time),4,1.690,1.657,1.955,21
+verify (l=n/2),ASMwSA / ASMwCA (H2 stored per group),4,1.265,1.260,1.302,21
+verify swapped,vASM,4,1.451,1.446,1.498,21
+verify swapped,BDN ASM (H2 hashed each time),4,2.539,2.500,2.635,21
+verify swapped,BDN ASM (H2 stored per group),4,1.706,1.689,1.834,21
+verify swapped,ASMwSA / ASMwCA (H2 hashed each time),4,2.293,2.258,2.345,21
+verify swapped,ASMwSA / ASMwCA (H2 stored per group),4,1.464,1.460,1.582,21
+setup per member,ASM (BDN) incl. mk,16,9.635,9.496,10.780,5
+setup per member,ASMwSA/ASMwCA incl. key-proof check,16,20.236,20.196,20.505,5
+setup per member,vASM,16,203.427,202.948,219.396,5
+sign share,ASM (BDN),16,0.300,0.298,0.316,21
+sign share,ASMwSA,16,0.306,0.304,0.387,21
+sign share,ASMwCA,16,0.324,0.299,0.367,21
+sign share,vASM,16,0.305,0.302,0.336,21
+verify (l=n/2),vASM,16,1.291,1.267,1.382,21
+verify (l=n/2),BDN ASM (H2 hashed each time),16,3.109,3.093,3.263,21
+verify (l=n/2),BDN ASM (H2 stored per group),16,1.504,1.497,1.595,21
+verify (l=n/2),ASMwSA / ASMwCA (H2 hashed each time),16,2.898,2.860,3.050,21
+verify (l=n/2),ASMwSA / ASMwCA (H2 stored per group),16,1.290,1.279,1.385,21
+verify swapped,vASM,16,1.457,1.450,1.570,21
+verify swapped,BDN ASM (H2 hashed each time),16,4.944,4.925,5.131,21
+verify swapped,BDN ASM (H2 stored per group),16,1.712,1.699,1.876,21
+verify swapped,ASMwSA / ASMwCA (H2 hashed each time),16,4.723,4.698,4.919,21
+verify swapped,ASMwSA / ASMwCA (H2 stored per group),16,1.480,1.476,1.503,21
+setup per member,ASM (BDN) incl. mk,64,58.234,58.002,58.666,5
+setup per member,ASMwSA/ASMwCA incl. key-proof check,64,104.670,104.317,110.885,5
+setup per member,vASM,64,3125.562,3123.640,3126.518,5
+sign share,ASM (BDN),64,0.318,0.317,0.327,21
+sign share,ASMwSA,64,0.332,0.332,0.347,21
+sign share,ASMwCA,64,0.312,0.311,0.335,21
+sign share,vASM,64,0.303,0.296,0.345,21
+verify (l=n/2),vASM,64,1.309,1.306,1.354,21
+verify (l=n/2),BDN ASM (H2 hashed each time),64,7.808,7.770,12.561,21
+verify (l=n/2),BDN ASM (H2 stored per group),64,1.512,1.509,1.529,21
+verify (l=n/2),ASMwSA / ASMwCA (H2 hashed each time),64,7.612,7.582,7.650,21
+verify (l=n/2),ASMwSA / ASMwCA (H2 stored per group),64,1.341,1.339,1.362,21
+verify swapped,vASM,64,1.469,1.466,1.589,21
+verify swapped,BDN ASM (H2 hashed each time),64,14.435,14.405,14.603,21
+verify swapped,BDN ASM (H2 stored per group),64,1.753,1.741,1.788,21
+verify swapped,ASMwSA / ASMwCA (H2 hashed each time),64,14.222,14.187,14.249,21
+verify swapped,ASMwSA / ASMwCA (H2 stored per group),64,1.538,1.535,1.570,21
+setup per member,ASM (BDN) incl. mk,256,610.211,607.525,616.774,3
+setup per member,ASMwSA/ASMwCA incl. key-proof check,256,793.704,793.033,794.326,3
+setup per member,vASM,256,52381.847,52381.847,52381.847,1
+sign share,ASM (BDN),256,0.311,0.308,0.339,21
+sign share,ASMwSA,256,0.394,0.393,0.411,21
+sign share,ASMwCA,256,0.313,0.312,0.322,21
+sign share,vASM,256,0.310,0.308,0.341,21
+verify (l=n/2),vASM,256,1.589,1.511,1.784,21
+verify (l=n/2),BDN ASM (H2 hashed each time),256,27.562,26.689,29.692,21
+verify (l=n/2),BDN ASM (H2 stored per group),256,1.622,1.599,1.701,21
+verify (l=n/2),ASMwSA / ASMwCA (H2 hashed each time),256,27.515,26.515,30.309,21
+verify (l=n/2),ASMwSA / ASMwCA (H2 stored per group),256,1.636,1.623,1.728,21
+verify swapped,vASM,256,1.613,1.573,3.577,21
+verify swapped,BDN ASM (H2 hashed each time),256,54.312,52.858,55.905,21
+verify swapped,BDN ASM (H2 stored per group),256,2.010,1.977,3.674,21
+verify swapped,ASMwSA / ASMwCA (H2 hashed each time),256,54.384,52.703,118.155,21
+verify swapped,ASMwSA / ASMwCA (H2 stored per group),256,1.843,1.787,2.033,21
+operation,product of 128 elements of G1,1,0.079,0.077,0.083,21
+operation,product of 128 elements of G2,1,0.231,0.224,0.316,21
+operation,hash to G1,1,0.178,0.164,0.481,21
+operation,hash to G2,1,0.369,0.353,0.448,21
+operation,"multi-pairing, 2 pairs",1,1.133,1.098,1.331,21
+operation,"multi-pairing, 3 pairs",1,1.352,1.339,1.410,21
+aggregate verify,AvASM,1,1.654,1.356,3.220,5
+aggregate verify,AvASM,10,5.599,5.495,5.659,5
+aggregate verify,AvASM,100,49.047,48.836,52.059,5

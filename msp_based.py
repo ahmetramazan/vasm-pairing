@@ -10,7 +10,7 @@ sigma = (H0(apk,m) prod_{j in S} H2(apk,j))^x would verify for every S and m.
 from dataclasses import dataclass
 from py_arkworks_bls12381 import GT
 from groups import (R, G2, ID1, ID2, rand_scalar, g2, mul, msm2, prod, multi_pair,
-                    hash_to_g1, hash_to_zr, enc)
+                    hash_to_g1, hash_to_zr, enc, valid_subgroup)
 import pok
 
 DST_H0 = b"MSP-ASM-v2-H0"
@@ -109,7 +109,9 @@ def bdn_combine(PK, S, shares):
     return prod(shares, ID1), prod((PK[i - 1] for i in S), ID2)
 
 
-def bdn_verify(apk, S, m, sigma):
+def bdn_verify(apk, S, m, sigma, n=None):
+    if not valid_subgroup(S, n):
+        return False
     s, pk = sigma
     h2 = prod((H2(apk, j) for j in S), ID1)
     return multi_pair([H0(apk, m), h2, -s], [pk, apk, G2]) == GT.one()
@@ -117,6 +119,8 @@ def bdn_verify(apk, S, m, sigma):
 
 def bdn_verify_cached(grp, S, m, sigma):
     """BDN verification with the message-independent H2(apk, j) stored per group."""
+    if not valid_subgroup(S, len(grp.PK)):
+        return False
     s, pk = sigma
     h2 = prod((grp.h2[j - 1] for j in S), ID1)
     return multi_pair([H0(grp.apk, m), h2, -s], [pk, grp.apk, G2]) == GT.one()
@@ -133,6 +137,8 @@ def sa_verify(grp, S, m, sigma):
     """e(H0(apk,m) * prod_{j in S} H2(apk,j), spk_S) == e(sigma, g2), where the
     verifier computes spk_S = prod_{j in S} pk_j^{a_j} from its MSPGroup (ASMwSA and ASMwCA).
     If the group values include the H2(apk, j), they are used instead of hashing."""
+    if not valid_subgroup(S, len(grp.PK)):
+        return False
     spk = prod((grp.wpk[j - 1] for j in S), ID2)
     if grp.h2 is not None:
         h2 = prod((grp.h2[j - 1] for j in S), ID1)

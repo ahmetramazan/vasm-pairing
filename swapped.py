@@ -7,7 +7,7 @@ paper (bench.py --verify). The signatures are computed directly from the secret 
 (the verifier only sees public data); the setups are the ones of vasm.py / msp_based.py.
 """
 from py_arkworks_bls12381 import G1Point, G2Point, GT
-from groups import R, G1, ID1, ID2, sc, g1, prod, multi_pair, enc, hash_to_zr
+from groups import R, G1, ID1, ID2, sc, g1, prod, multi_pair, enc, hash_to_zr, valid_subgroup
 from vasm import DST_VASM
 from msp_based import DST_H0, DST_H1, DST_H2
 
@@ -33,6 +33,8 @@ def vasm_sign(gid, mks, S, m):
 def vasm_verify(group, S, m, sigma):
     """e(prod_{i in S} mpk_i, H0(gid, m)) == e(g1, sigma)."""
     gid, MPK = group
+    if not valid_subgroup(S, len(MPK)):
+        return False
     apk_S = prod((MPK[i - 1] for i in S), ID1)
     return multi_pair([apk_S, NEG_G1], [hash_to_g2(DST_VASM, gid, m), sigma]) == GT.one()
 
@@ -44,6 +46,7 @@ class MSPGroup1:
 
     def __init__(self, PK, with_h2=False):
         a = [hash_to_zr(DST_H1, pk, PK) for pk in PK]
+        self.n = len(PK)
         self.a = a
         self.apk = G1Point.multiexp_unchecked(list(PK), [sc(x) for x in a])
         self.wpk = [pk * sc(x) for pk, x in zip(PK, a)]
@@ -68,6 +71,8 @@ def msp_example(sks, S, m):
 
 def bdn_verify(grp, S, m, sigma):
     """e(pk, H0(apk, m)) e(apk, prod_{i in S} H2(apk, i)) == e(g1, s)."""
+    if not valid_subgroup(S, grp.n):
+        return False
     s, pk = sigma
     h2S = prod((grp.H2(j) for j in S), ID2)
     return multi_pair([pk, grp.apk, NEG_G1], [hash_to_g2(DST_H0, grp.apk, m), h2S, s]) == GT.one()
@@ -75,6 +80,8 @@ def bdn_verify(grp, S, m, sigma):
 
 def sa_verify(grp, S, m, sigma):
     """e(spk_S, H0(apk, m) prod_{j in S} H2(apk, j)) == e(g1, sigma), spk_S from pk_j^{a_j}."""
+    if not valid_subgroup(S, grp.n):
+        return False
     spk = prod((grp.wpk[j - 1] for j in S), ID1)
     h = hash_to_g2(DST_H0, grp.apk, m) + prod((grp.H2(j) for j in S), ID2)
     return multi_pair([spk, NEG_G1], [h, sigma]) == GT.one()

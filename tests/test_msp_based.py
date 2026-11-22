@@ -113,3 +113,20 @@ def test_subset_sum_attack_without_key_proofs(monkeypatch):
     from groups import enc
     bad = [pok.prove(enc("ASM-key", PK[j]), [y[j - 1]], [PK[j]]) for j in (1, 2)]
     assert not mb.check_keys(PK[1:], bad)
+
+
+def test_subgroup_must_be_valid():
+    sks = [rand_scalar() for _ in range(4)]
+    PK, apk, mks = mb.bdn_setup(sks)
+    S, m = [1, 4], b"m"
+    shares = []
+    for i in S:
+        _, mus = mb.mu_values(i, sks[i - 1], PK)
+        shares.append(mb.asmwsa_sign_share(PK, i, sks[i - 1], mus, apk, S, m))
+    sigma = shares[0] + shares[1]
+    grp_h2 = mb.msp_group(PK, with_h2=True)
+    assert mb.sa_verify(grp_h2, S, m, sigma)
+    assert not mb.sa_verify(grp_h2, [1, 0], m, sigma)
+    bsig = mb.bdn_combine(PK, S, [mb.bdn_sign_share(apk, sks[i - 1], mks[i - 1], m) for i in S])
+    assert mb.bdn_verify_cached(grp_h2, S, m, bsig)
+    assert not mb.bdn_verify_cached(grp_h2, [1, 0], m, bsig)

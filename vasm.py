@@ -9,7 +9,7 @@ import hashlib
 from dataclasses import dataclass
 from py_arkworks_bls12381 import GT
 from groups import (R, G1, G2, ID2, rand_scalar, g2, mul, sc, prod, pair, multi_pair,
-                    hash_to_g1, hash_to_zr, enc, poly_eval)
+                    hash_to_g1, hash_to_zr, enc, poly_eval, valid_subgroup)
 import pok
 
 DST_VASM = b"vASM-v2-H0"
@@ -63,6 +63,14 @@ def eval_commitments(C, x):
     return acc
 
 
+def group_public(PK, COM, legacy_hash=False):
+    """The per-group values of a verifier: gid and MPK, computed from PK and COM
+    (mpk_i = prod_k C_k^{i^k}). A verifier never takes MPK from an untrusted source:
+    with a chosen mpk_i = g2^{x_i}, sigma = H0(gid, m)^{sum x_i} would verify."""
+    MPK = [eval_commitments(COM, t) for t in range(1, len(PK) + 1)]
+    return GroupPublic(group_id(PK, COM), list(PK), list(COM), MPK, legacy_hash)
+
+
 def H0(gpk: GroupPublic, m: bytes):
     if gpk.legacy_hash:
         return hash_to_g1(DST_BLS, m)
@@ -101,6 +109,8 @@ class Member:
         n, i = self.n, self.i
         for j in range(1, n + 1):
             C, proof = broadcasts[j]
+            if j == i:                     # own dealing: nothing to check
+                continue
             if len(C) != n:
                 raise SetupError(j, "wrong number of commitments")
             if C[0] != self.PK[j - 1]:                                   # check (a')
@@ -111,9 +121,7 @@ class Member:
                 raise SetupError(j, "share inconsistent with commitments")
         mk = sum(my_shares.values()) % R
         COM = [prod((broadcasts[j][0][k] for j in range(1, n + 1)), ID2) for k in range(n)]
-        gid = group_id(self.PK, COM)
-        MPK = [eval_commitments(COM, t) for t in range(1, n + 1)]
-        return mk, GroupPublic(gid, self.PK, COM, MPK, self.legacy_hash)
+        return mk, group_public(self.PK, COM, self.legacy_hash)
 
 
 def run_setup(sks, use_pok=True, legacy_hash=False):
@@ -148,5 +156,7 @@ def combine(shares):
 
 def verify(gpk, S, m, sigma):
     """e(H0(gid,m), prod_{i in S} mpk_i) == e(sigma, g2)   (eq. vasm-verify)."""
+    if not valid_subgroup(S, len(gpk.MPK)):
+        return False
     apk_S = prod((gpk.MPK[i - 1] for i in S), ID2)
     return multi_pair([H0(gpk, m), -sigma], [apk_S, G2]) == GT.one()

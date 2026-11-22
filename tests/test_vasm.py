@@ -66,3 +66,22 @@ def test_eval_commitments_matches_multiexp():
     C = [vasm.g2(rand_scalar()) for _ in range(6)]
     for x in (1, 2, 5, 6, 255):
         assert vasm.eval_commitments(C, x) == msm2(C, [pow(x, k, R) for k in range(6)])
+
+
+def test_subgroup_must_be_valid():
+    """Index 0 must not select member n, and a repeated index must not count twice."""
+    sks = [rand_scalar() for _ in range(4)]
+    mks, gpk = vasm.run_setup(sks)
+    sig = vasm.combine([vasm.sign_share(gpk, mks[i - 1], b"m") for i in [1, 4]])
+    assert vasm.verify(gpk, [1, 4], b"m", sig)
+    assert not vasm.verify(gpk, [1, 0], b"m", sig)
+    assert not vasm.verify(gpk, [1, 5], b"m", sig)
+    twice = vasm.combine([vasm.sign_share(gpk, mks[0], b"m")] * 2)
+    assert not vasm.verify(gpk, [1, 1], b"m", twice)
+
+
+def test_verifier_group_from_com():
+    sks = [rand_scalar() for _ in range(3)]
+    mks, gpk = vasm.run_setup(sks)
+    v = vasm.group_public(gpk.PK, gpk.COM)
+    assert v.gid == gpk.gid and v.MPK == gpk.MPK

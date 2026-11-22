@@ -139,6 +139,20 @@ def hash_to_zr(dst: bytes, *items):
     return int.from_bytes(h, "big") % R
 
 
+def valid_subgroup(S, n=None):
+    """True if S is a non-empty set of member indices: distinct integers in 1..n.
+    Verifiers must check this before indexing per-group lists with S: with Python's
+    negative indexing, index 0 would otherwise select member n, and a repeated index
+    would count a member twice."""
+    S = list(S)
+    if not S or len(set(S)) != len(S):
+        return False
+    for i in S:
+        if not isinstance(i, int) or isinstance(i, bool) or i < 1 or (n is not None and i > n):
+            return False
+    return True
+
+
 def lagrange_at(points, i, x):
     """lambda_i^{points}(x) in Z_R."""
     num, den = 1, 1

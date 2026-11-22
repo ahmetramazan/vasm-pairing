@@ -27,6 +27,7 @@ python bench.py --quick
 Benchmark options:
 
 ```
+python bench.py --paper    # every measurement of Section 9 of the paper, in one run (results_paper.csv)
 python bench.py            # full run, n = 4, 16, 64
 python bench.py --big      # also n = 256 (slow)
 python bench.py --msp      # setup of ASM and of ASMwSA/ASMwCA (with key-proof check)

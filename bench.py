@@ -9,6 +9,8 @@
     python bench.py --verify   # verification of all schemes, n = 4..256, in both group
                                # orientations, and the cost of single operations
     python bench.py --quick    # n in 4,16 only, to check that everything works
+    python bench.py --paper    # every number of Section 9 of the paper, in one run
+                               # (results_paper.csv; about 5 minutes)
 Writes results.csv (milliseconds: median, min and max of the runs; the number of runs
 is in the last column). --verify writes results_verify.csv (keys in G2, as in the
 paper), results_verify_swap.csv (keys in G1) and results_ops.csv; --setup writes
@@ -22,6 +24,7 @@ import swapped as sw
 from groups import rand_scalar, g2
 
 REPS = 5
+REPS_FAST = 21          # sub-millisecond operations (signing, verification, single operations)
 
 
 def stats(fn, reps=REPS):
@@ -66,7 +69,7 @@ def msp_signed_example(sks, S, m):
     return PK, apk, bmks, bsig, ssig, grp, grp_h2
 
 
-def verify_rows(n, sks, S, m, mks, gpk):
+def verify_rows(n, sks, S, m, mks, gpk, reps=REPS):
     """Verification rows of Table 2: vASM; BDN's ASM and ASMwSA/ASMwCA, each with the
     message-independent H2(apk, j) hashed in every verification or stored per group.
     For ASMwSA/ASMwCA the verifier always computes spk from the stored pk_j^{a_j}."""
@@ -74,15 +77,15 @@ def verify_rows(n, sks, S, m, mks, gpk):
     sig = vasm.combine([vasm.sign_share(gpk, mks[i - 1], m) for i in S])
     assert vasm.verify(gpk, S, m, sig)
     PK, apk, bmks, bsig, ssig, grp, grp_h2 = msp_signed_example(sks, S, m)
-    rows.append(("verify (l=n/2)", "vASM", n, stats(lambda: vasm.verify(gpk, S, m, sig))))
-    rows.append(("verify (l=n/2)", "BDN ASM (H2 hashed each time)", n, stats(lambda: mb.bdn_verify(apk, S, m, bsig))))
-    rows.append(("verify (l=n/2)", "BDN ASM (H2 stored per group)", n, stats(lambda: mb.bdn_verify_cached(grp_h2, S, m, bsig))))
-    rows.append(("verify (l=n/2)", "ASMwSA / ASMwCA (H2 hashed each time)", n, stats(lambda: mb.sa_verify(grp, S, m, ssig))))
-    rows.append(("verify (l=n/2)", "ASMwSA / ASMwCA (H2 stored per group)", n, stats(lambda: mb.sa_verify(grp_h2, S, m, ssig))))
+    rows.append(("verify (l=n/2)", "vASM", n, stats(lambda: vasm.verify(gpk, S, m, sig), reps)))
+    rows.append(("verify (l=n/2)", "BDN ASM (H2 hashed each time)", n, stats(lambda: mb.bdn_verify(apk, S, m, bsig), reps)))
+    rows.append(("verify (l=n/2)", "BDN ASM (H2 stored per group)", n, stats(lambda: mb.bdn_verify_cached(grp_h2, S, m, bsig), reps)))
+    rows.append(("verify (l=n/2)", "ASMwSA / ASMwCA (H2 hashed each time)", n, stats(lambda: mb.sa_verify(grp, S, m, ssig), reps)))
+    rows.append(("verify (l=n/2)", "ASMwSA / ASMwCA (H2 stored per group)", n, stats(lambda: mb.sa_verify(grp_h2, S, m, ssig), reps)))
     return rows
 
 
-def verify_rows_swapped(n, sks, S, m, mks, gpk):
+def verify_rows_swapped(n, sks, S, m, mks, gpk, reps=REPS):
     """The same verifiers with keys in G1 and hashes and signatures in G2 (swapped.py)."""
     rows = []
     vgrp = sw.vasm_group(gpk.gid, mks)
@@ -91,11 +94,11 @@ def verify_rows_swapped(n, sks, S, m, mks, gpk):
     assert sw.vasm_verify(vgrp, S, m, sig)
     assert sw.bdn_verify(grp, S, m, bsig) and sw.bdn_verify(grp_h2, S, m, bsig)
     assert sw.sa_verify(grp, S, m, ssig) and sw.sa_verify(grp_h2, S, m, ssig)
-    rows.append(("verify swapped", "vASM", n, stats(lambda: sw.vasm_verify(vgrp, S, m, sig))))
-    rows.append(("verify swapped", "BDN ASM (H2 hashed each time)", n, stats(lambda: sw.bdn_verify(grp, S, m, bsig))))
-    rows.append(("verify swapped", "BDN ASM (H2 stored per group)", n, stats(lambda: sw.bdn_verify(grp_h2, S, m, bsig))))
-    rows.append(("verify swapped", "ASMwSA / ASMwCA (H2 hashed each time)", n, stats(lambda: sw.sa_verify(grp, S, m, ssig))))
-    rows.append(("verify swapped", "ASMwSA / ASMwCA (H2 stored per group)", n, stats(lambda: sw.sa_verify(grp_h2, S, m, ssig))))
+    rows.append(("verify swapped", "vASM", n, stats(lambda: sw.vasm_verify(vgrp, S, m, sig), reps)))
+    rows.append(("verify swapped", "BDN ASM (H2 hashed each time)", n, stats(lambda: sw.bdn_verify(grp, S, m, bsig), reps)))
+    rows.append(("verify swapped", "BDN ASM (H2 stored per group)", n, stats(lambda: sw.bdn_verify(grp_h2, S, m, bsig), reps)))
+    rows.append(("verify swapped", "ASMwSA / ASMwCA (H2 hashed each time)", n, stats(lambda: sw.sa_verify(grp, S, m, ssig), reps)))
+    rows.append(("verify swapped", "ASMwSA / ASMwCA (H2 stored per group)", n, stats(lambda: sw.sa_verify(grp_h2, S, m, ssig), reps)))
     return rows
 
 
@@ -137,8 +140,8 @@ def verify_only(ns):
 
 def vasm_setup_member(n, use_pok):
     """Work of one member: its own dealing (commitments, proof, shares) and the checks
-    of all n dealings (C_0 = pk_j, shares against commitments, proofs), then COM, gid
-    and MPK. The share check of member i evaluates the commitments at i (Horner's rule,
+    of the n-1 other dealings (C_0 = pk_j, shares against commitments, proofs), then COM,
+    gid and MPK. The share check of member i evaluates the commitments at i (Horner's rule,
     exponentiations by i), so its cost grows with the bit length and the number of ones
     of i. We measure member n-1 (= 2^m - 1 for the n used here), the most expensive one;
     member 1 would be the cheapest."""
@@ -163,10 +166,8 @@ def fast_setup(sks):
     polys = [[s] + [rand_scalar() for _ in range(n - 1)] for s in sks]
     F = [sum(p[k] for p in polys) % R for k in range(n)]
     COM = [g2(c) for c in F]
-    gid = vasm.group_id(PK, COM)
-    MPK = [vasm.eval_commitments(COM, t) for t in range(1, n + 1)]
     mks = [poly_eval(F, i) for i in range(1, n + 1)]
-    return mks, vasm.GroupPublic(gid, PK, COM, MPK)
+    return mks, vasm.group_public(PK, COM)          # gid and MPK as a verifier computes them
 
 
 def sign_verify_only(n):
@@ -250,7 +251,9 @@ def setup_rows(n):
         return gprod(recv, ID1)
 
     def asmwsa():
-        assert mb.check_keys(PK, prf)
+        # member 1 checks that the keys are distinct and the proofs of the n-1 other keys
+        assert len(set(bytes(pk.to_compressed_bytes()) for pk in PK)) == n
+        assert all(mb.pok.verify(mb.enc("ASM-key", pk), [pk], pr) for pk, pr in zip(PK[1:], prf[1:]))
         return mb.mu_values(1, sks[0], PK)
 
     r = REPS if n <= 64 else 3
@@ -261,6 +264,66 @@ def setup_rows(n):
     rows.append(("setup per member", "vASM", n, stats(vasm_setup_member(n, True), REPS if n <= 64 else 1)))
     print(f"  {'vASM':<40} {rows[-1][3][0]:10.3f} ms", flush=True)
     return rows
+
+
+def sign_rows(n, reps=REPS_FAST):
+    """One signature share (l = n/2) of ASM, ASMwSA, ASMwCA and vASM; everything that does
+    not depend on the message (a_i sk_i, mk_i, the mu_{ij}) is computed at setup."""
+    from groups import ID1, prod as gprod
+    m = b"benchmark message"
+    sks = [rand_scalar() for _ in range(n)]
+    PK = [g2(x) for x in sks]
+    a = mb.coefficients(PK)
+    apk = mb.aggregate_key(PK, a)
+    S = list(range(1, max(1, n // 2) + 1))
+    e1 = a[0] * sks[0] % mb.R
+    _, mus = mb.mu_values(1, sks[0], PK)               # mu_{1j} = H2(apk, j)^{a_1 sk_1}
+    ask = sum(x * s for x, s in zip(a, sks)) % mb.R
+    mk1 = mb.mul(mb.H2(apk, 1), ask)                    # BDN: mk_1 = prod_i mu_{i1} = H2(apk,1)^{sum a_i sk_i}
+    mks, gpk = fast_setup(sks)
+    assert mb.asmwsa_sign_share(PK, 1, sks[0], mus, apk, S, m) == mb.mul(mb.H0(apk, m), e1) + gprod((mus[j] for j in S), ID1)
+    return [
+        ("sign share", "ASM (BDN)", n, stats(lambda: mb.bdn_sign_share(apk, sks[0], mk1, m), reps)),
+        ("sign share", "ASMwSA", n, stats(lambda: mb.mul(mb.H0(apk, m), e1) + gprod((mus[j] for j in S), ID1), reps)),
+        ("sign share", "ASMwCA", n, stats(lambda: mb.mul(mb.H0(apk, m), e1) + mus[1], reps)),
+        ("sign share", "vASM", n, stats(lambda: vasm.sign_share(gpk, mks[0], m), reps)),
+    ]
+
+
+def aggregate_rows(Ns=(1, 10, 100), size=4):
+    """AvASM aggregate verification of N signatures from N different groups of `size`
+    members, each signed by a subgroup of size 2; the verifier stores MPK per group."""
+    rows = []
+    for N in Ns:
+        items, sigs = [], []
+        for k in range(N):
+            mks, gpk = fast_setup([rand_scalar() for _ in range(size)])
+            msg = b"msg %d" % k
+            sigs.append(vasm.combine([vasm.sign_share(gpk, mks[i], msg) for i in range(2)]))
+            items.append((gpk, [1, 2], msg))
+        Sigma = ag.aggregate(sigs)
+        assert ag.avasm_verify(items, Sigma)
+        rows.append(("aggregate verify", "AvASM", N, stats(lambda: ag.avasm_verify(items, Sigma))))
+    return rows
+
+
+def paper(ns=(4, 16, 64, 256)):
+    """All measurements of Section 9 in one file."""
+    rows = []
+    for n in ns:
+        print(f"n = {n}: setup ...", flush=True)
+        rows += setup_rows(n)
+        print(f"n = {n}: signing and verification ...", flush=True)
+        rows += sign_rows(n)
+        sks = [rand_scalar() for _ in range(n)]
+        mks, gpk = fast_setup(sks)
+        S, m = list(range(1, max(1, n // 2) + 1)), b"benchmark message"
+        rows += verify_rows(n, sks, S, m, mks, gpk, REPS_FAST)
+        rows += verify_rows_swapped(n, sks, S, m, mks, gpk, REPS_FAST)
+    print("single operations and aggregate verification ...", flush=True)
+    rows += op_rows()
+    rows += aggregate_rows()
+    write_csv(rows, "results_paper.csv")
 
 
 def setup_only(ns):
@@ -304,7 +367,9 @@ def main(ns):
 
 
 if __name__ == "__main__":
-    if "--verify" in sys.argv:
+    if "--paper" in sys.argv:
+        paper()
+    elif "--verify" in sys.argv:
         verify_only([4, 16, 64, 256])
     elif "--sign" in sys.argv:
         msp_sign_only([4, 16, 64, 256])
