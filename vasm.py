@@ -43,6 +43,7 @@ class GroupPublic:
     COM: list
     MPK: list          # MPK[i-1] = mpk_i
     legacy_hash: bool = False
+    dealings: list = None   # dealings[j-1] = (COM_j, proof_j), published with the group
 
 
 def group_id(PK, COM):
@@ -69,6 +70,32 @@ def group_public(PK, COM, legacy_hash=False):
     with a chosen mpk_i = g2^{x_i}, sigma = H0(gid, m)^{sum x_i} would verify."""
     MPK = [eval_commitments(COM, t) for t in range(1, len(PK) + 1)]
     return GroupPublic(group_id(PK, COM), list(PK), list(COM), MPK, legacy_hash)
+
+
+def verifier_group(PK, dealings, legacy_hash=False):
+    """Once-per-group check of the verifier (Section 5.1): gpk = (PK, (COM_j, proof_j)_j).
+    The keys in PK must be distinct and, for every j, COM_j must have n elements,
+    C_0^(j) = pk_j and proof_j must verify with context (PK, j). Only then are COM and
+    MPK computed. Checking COM alone is not enough: with C_0 = prod pk_j and a chosen
+    C_1, anyone can make prod_{i in S} mpk_i = g2^x (paper, Remark 3.7)."""
+    n = len(PK)
+    keys = [bytes(pk.to_compressed_bytes()) for pk in PK]
+    if len(set(keys)) != n:
+        raise SetupError(None, "the public keys in PK are not distinct")
+    if len(dealings) != n:
+        raise SetupError(None, "wrong number of dealings")
+    for j in range(1, n + 1):
+        C, proof = dealings[j - 1]
+        if len(C) != n:
+            raise SetupError(j, "wrong number of commitments")
+        if C[0] != PK[j - 1]:
+            raise SetupError(j, "C_0 != pk_j")
+        if proof is None or not pok.verify(enc(PK, j), C, proof):
+            raise SetupError(j, "invalid proof of knowledge")
+    COM = [prod((dealings[j][0][k] for j in range(n)), ID2) for k in range(n)]
+    gpk = group_public(PK, COM, legacy_hash)
+    gpk.dealings = list(dealings)
+    return gpk
 
 
 def H0(gpk: GroupPublic, m: bytes):
@@ -121,7 +148,9 @@ class Member:
                 raise SetupError(j, "share inconsistent with commitments")
         mk = sum(my_shares.values()) % R
         COM = [prod((broadcasts[j][0][k] for j in range(1, n + 1)), ID2) for k in range(n)]
-        return mk, group_public(self.PK, COM, self.legacy_hash)
+        gpk = group_public(self.PK, COM, self.legacy_hash)
+        gpk.dealings = [broadcasts[j] for j in range(1, n + 1)]   # published for verifiers
+        return mk, gpk
 
 
 def run_setup(sks, use_pok=True, legacy_hash=False):

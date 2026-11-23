@@ -85,3 +85,39 @@ def test_verifier_group_from_com():
     mks, gpk = vasm.run_setup(sks)
     v = vasm.group_public(gpk.PK, gpk.COM)
     assert v.gid == gpk.gid and v.MPK == gpk.MPK
+
+
+def test_verifier_checks_dealings():
+    """Verifier side of the setup (Section 5.1): it recomputes gid and MPK from the
+    published dealings and gets the members' values."""
+    sks = [rand_scalar() for _ in range(4)]
+    mks, gpk = vasm.run_setup(sks)
+    v = vasm.verifier_group(gpk.PK, gpk.dealings)
+    assert v.gid == gpk.gid and v.MPK == gpk.MPK
+    sig = vasm.combine([vasm.sign_share(gpk, mks[i - 1], b"m") for i in [1, 3]])
+    assert vasm.verify(v, [1, 3], b"m", sig)
+
+
+def test_unchecked_com_is_forgeable_checked_is_not():
+    """Remark 3.7: from public keys alone, C_0 = prod pk_j and a chosen C_1 give
+    prod_{i in S} mpk_i = g2^x, so H0(gid, m)^x verifies if only COM is used.
+    The verifier's check of the dealings rejects such a group."""
+    n, S = 4, [1, 2]
+    sks = [rand_scalar() for _ in range(n)]
+    mks, gpk = vasm.run_setup(sks)
+    PK = gpk.PK
+    x = rand_scalar()
+    C0 = vasm.prod(PK, vasm.ID2)
+    t = sum(S) % R
+    C1 = (vasm.g2(x) + (-C0) * vasm.sc(len(S))) * vasm.sc(pow(t, -1, R))
+    COM = [C0, C1] + [vasm.ID2] * (n - 2)
+    fake = vasm.group_public(PK, COM)
+    m = b"forged"
+    assert vasm.verify(fake, S, m, vasm.mul(vasm.H0(fake, m), x))   # the attack works on COM alone
+    # any dealing list that is not the members' own fails the check
+    bad = list(gpk.dealings)
+    C, proof = bad[1]
+    bad[1] = ([C[0], C[1] + vasm.g2(1)] + list(C[2:]), proof)
+    with pytest.raises(vasm.SetupError) as e:
+        vasm.verifier_group(PK, bad)
+    assert e.value.blame == 2
